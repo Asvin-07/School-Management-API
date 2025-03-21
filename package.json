@@ -8,5 +8,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
-  }
+  },
+  "scripts": {
+  "start": "node index.js"
+}
 }
