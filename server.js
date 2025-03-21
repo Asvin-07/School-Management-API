@@ -14,20 +14,15 @@ const PORT = process.env.PORT || 5000;
 app.use(bodyParser.json());
 app.use(cors());
 
-// MySQL Database Connection
-const db = mysql.createConnection({
+// MySQL Database Connection (Using Connection Pool)
+const db = mysql.createPool({
+    connectionLimit: 10, // Allows multiple connections
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
-});
-
-db.connect(err => {
-    if (err) {
-        console.error("Database connection failed:", err);
-        return;
-    }
-    console.log("✅ Connected to MySQL Database");
+    database: process.env.DB_NAME,
+    waitForConnections: true,
+    queueLimit: 0
 });
 
 // Default Route
@@ -35,7 +30,7 @@ app.get("/", (req, res) => {
     res.send("✅ School Management API is running!");
 });
 
-// Add School API
+// Add School API (Using Connection Pool)
 app.post("/addSchool", (req, res) => {
     const { name, address, latitude, longitude } = req.body;
 
@@ -44,9 +39,23 @@ app.post("/addSchool", (req, res) => {
     }
 
     const query = "INSERT INTO schools (name, address, latitude, longitude) VALUES (?, ?, ?, ?)";
-    db.query(query, [name, address, latitude, longitude], (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.status(201).json({ message: "School added successfully", schoolId: result.insertId });
+
+    db.getConnection((err, connection) => {
+        if (err) {
+            console.error("Database connection failed:", err);
+            return res.status(500).json({ error: "Database connection error" });
+        }
+
+        connection.query(query, [name, address, latitude, longitude], (err, result) => {
+            connection.release(); // ✅ Always release the connection back to the pool
+
+            if (err) {
+                console.error("Query error:", err);
+                return res.status(500).json({ error: err.message });
+            }
+
+            res.status(201).json({ message: "School added successfully", schoolId: result.insertId });
+        });
     });
 });
 
@@ -65,7 +74,7 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
     return R * c; // Distance in km
 };
 
-// List Schools API
+// List Schools API (Using Connection Pool)
 app.get("/listSchools", (req, res) => {
     const { latitude, longitude } = req.query;
 
@@ -73,15 +82,27 @@ app.get("/listSchools", (req, res) => {
         return res.status(400).json({ error: "Latitude and Longitude are required" });
     }
 
-    db.query("SELECT * FROM schools", (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+    db.getConnection((err, connection) => {
+        if (err) {
+            console.error("Database connection failed:", err);
+            return res.status(500).json({ error: "Database connection error" });
+        }
 
-        const schoolsWithDistance = results.map(school => ({
-            ...school,
-            distance: calculateDistance(latitude, longitude, school.latitude, school.longitude)
-        })).sort((a, b) => a.distance - b.distance);
+        connection.query("SELECT * FROM schools", (err, results) => {
+            connection.release(); // ✅ Always release the connection back to the pool
 
-        res.json(schoolsWithDistance);
+            if (err) {
+                console.error("Query error:", err);
+                return res.status(500).json({ error: err.message });
+            }
+
+            const schoolsWithDistance = results.map(school => ({
+                ...school,
+                distance: calculateDistance(latitude, longitude, school.latitude, school.longitude)
+            })).sort((a, b) => a.distance - b.distance);
+
+            res.json(schoolsWithDistance);
+        });
     });
 });
 
