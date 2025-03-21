@@ -1,10 +1,11 @@
 // Load environment variables
-require('dotenv').config();
+import dotenv from "dotenv";
+import express from "express";
+import mysql from "mysql2";
+import bodyParser from "body-parser";
+import cors from "cors";
 
-const express = require('express');
-const mysql = require('mysql2');
-const bodyParser = require('body-parser');
-const cors = require('cors');
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -23,17 +24,21 @@ const db = mysql.createConnection({
 
 db.connect(err => {
     if (err) {
-        console.error('Database connection failed:', err);
+        console.error("Database connection failed:", err);
         return;
     }
-    console.log('✅ Connected to MySQL Database');
+    console.log("✅ Connected to MySQL Database");
+});
+
+// Default Route
+app.get("/", (req, res) => {
+    res.send("✅ School Management API is running!");
 });
 
 // Add School API
-app.post('/addSchool', (req, res) => {
+app.post("/addSchool", (req, res) => {
     const { name, address, latitude, longitude } = req.body;
 
-    // Validation
     if (!name || !address || !latitude || !longitude) {
         return res.status(400).json({ error: "All fields are required" });
     }
@@ -61,7 +66,7 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 // List Schools API
-app.get('/listSchools', (req, res) => {
+app.get("/listSchools", (req, res) => {
     const { latitude, longitude } = req.query;
 
     if (!latitude || !longitude) {
@@ -71,7 +76,6 @@ app.get('/listSchools', (req, res) => {
     db.query("SELECT * FROM schools", (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
 
-        // Calculate distances and sort
         const schoolsWithDistance = results.map(school => ({
             ...school,
             distance: calculateDistance(latitude, longitude, school.latitude, school.longitude)
@@ -81,7 +85,7 @@ app.get('/listSchools', (req, res) => {
     });
 });
 
-// Start the server
+// Start Server
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });

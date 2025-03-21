@@ -1,4 +1,13 @@
 {
+  "name": "school-management-api",
+  "version": "1.0.0",
+  "description": "A simple school management API using Node.js and MySQL",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
   "dependencies": {
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
@@ -7,9 +16,6 @@
     "mysql2": "^3.14.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
-  },
-  "scripts": {
-  "start": "node index.js"
-}
+    "nodemon": "^3.0.0"
+  }
 }
