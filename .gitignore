@@ -51,6 +51,6 @@ build/
 secret_key.txt
 secrets.txt
 
-# Postman Collections
+# Postman Collection
 *.postman_collection.json
 *.postman_environment.json
