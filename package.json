@@ -2,7 +2,7 @@
   "name": "school-management-api",
   "version": "1.0.0",
   "description": "A simple school management API using Node.js and MySQL",
-  "main": "index.js",
+  "main": "server.js",
   "type": "module",
   "scripts": {
     "start": "node server.js",
